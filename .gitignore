@@ -1,0 +1,22 @@
+# Segredos — nunca versionar.
+# A extensão não deve conter NENHUMA chave de API: tudo que fala com
+# serviços pagos passa pelo backend (ver backend/src/services/).
+.env
+.env.*
+!.env.example
+*.pem
+*.key
+
+# Dependências e build
+node_modules/
+dist/
+build/
+*.crx
+*.zip
+
+# Sistema / editor
+.DS_Store
+Thumbs.db
+.vscode/
+.idea/
+*.log

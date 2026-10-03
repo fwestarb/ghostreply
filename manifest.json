@@ -1,0 +1,44 @@
+{
+  "manifest_version": 3,
+  "name": "GhostReply",
+  "version": "2.0.3",
+  "description": "Assistente de atendimento com IA para WhatsApp Web: sugere respostas baseadas na base de conhecimento da empresa.",
+  "key": "MIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEAx4QaPgQYy07JGATdG8UWqzK3LJBnu2oMv5I6LJbirS3d89vwEPPQ12kDmEWJtA5Ym4MF3na14E7VOwNRDuEU8gDgMcdXe76mDhGn7glfephA17yEOujr0D91N5HzD1oPznobydadrzSs700hyG0DwOOZz+y/TddOZdYjR8PuCB6H9GRHgRIzEQB1SCbypib0jTnALPgr8rrHXc6OpH5VssmY8W5ZevhNPLqp8ghPAMmfE/dWJKouJjH+ph1hJzM75vDTFfBgk/xcIxKaTLPKbrp13gtjSvFSct7pxBTc/JircJMeWKRzStzpvUBgVZkK3UNUDD/68UE5iDe/rg1VcQIDAQAB",
+  "permissions": [
+    "storage",
+    "activeTab",
+    "identity"
+  ],
+  "host_permissions": [
+    "https://web.whatsapp.com/*",
+    "http://localhost:4000/*"
+  ],
+  "background": {
+    "service_worker": "background.js"
+  },
+  "content_scripts": [
+    {
+      "matches": [
+        "https://web.whatsapp.com/*"
+      ],
+      "js": [
+        "messaging.js",
+        "api.js",
+        "auth-client.js",
+        "knowledge-client.js",
+        "spring.js",
+        "content.js"
+      ],
+      "css": [
+        "style.css"
+      ],
+      "run_at": "document_idle"
+    }
+  ],
+  "icons": {
+    "16": "icon16.png",
+    "48": "icon48.png",
+    "128": "icon128.png"
+  },
+  "minimum_chrome_version": "110"
+}
