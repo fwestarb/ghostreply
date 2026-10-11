@@ -1,0 +1,67 @@
+{
+  "url": "https://fwestarb.github.io/ghostreply/",
+  "http": 200,
+  "fonts": true,
+  "interactiveSymbol": true,
+  "layouts": [
+    {
+      "language": "pt",
+      "width": 320,
+      "overflow": false
+    },
+    {
+      "language": "pt",
+      "width": 390,
+      "overflow": false
+    },
+    {
+      "language": "pt",
+      "width": 768,
+      "overflow": false
+    },
+    {
+      "language": "pt",
+      "width": 1440,
+      "overflow": false
+    },
+    {
+      "language": "en",
+      "width": 320,
+      "overflow": false
+    },
+    {
+      "language": "en",
+      "width": 390,
+      "overflow": false
+    },
+    {
+      "language": "en",
+      "width": 768,
+      "overflow": false
+    },
+    {
+      "language": "en",
+      "width": 1440,
+      "overflow": false
+    }
+  ],
+  "languagePersistence": true,
+  "selectorKeyboard": true,
+  "clipboard": true,
+  "faq": true,
+  "webglComponents": true,
+  "galleryKeyboard": true,
+  "verticalScroll": true,
+  "solidBackground": true,
+  "download": {
+    "sha256": "34350cbd11746e8f8fd75b204944ff1c9091ca133004c10f79e9c9bd3e4ed4d2",
+    "verified": true,
+    "loader": true,
+    "corruptFileRejected": true,
+    "networkFailureHandled": true,
+    "cancellation": true
+  },
+  "reducedMotion": true,
+  "noWebGLFallback": true,
+  "javascriptErrors": []
+}
