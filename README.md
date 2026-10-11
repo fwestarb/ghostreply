@@ -52,3 +52,12 @@ Table setup is in [backend/src/database/setup.sql](backend/src/database/setup.sq
 The free model has usage limits and may be unavailable. Paid models are blocked. AI requests send the relevant text to the external provider; do not send sensitive customer information.
 
 12 automated tests passed. Local integration checks covered authentication, data persistence and isolation, token refresh/revocation and real AI responses. Temporary test accounts were removed. The author confirmed the extension works in a local manual WhatsApp Web test. SMTP, Google sign-in and public hosting require additional setup. This is a local prototype with no Chrome Web Store release. AI output can be inaccurate and needs human review. WhatsApp Web changes may require selector updates.
+
+
+## Site do projeto / Project website
+
+[Apresentação, prints, instalação e download / Overview, screenshots, setup and download](https://fwestarb.github.io/ghostreply/).
+
+Código do site: [website](website). Publicação e testes: [docs/SITE.md](docs/SITE.md).
+
+Outros projetos / Other projects: [ESP32 Tera](https://fwestarb.github.io/esp32-tera/) · [GhostReply](https://fwestarb.github.io/ghostreply/) · [Projeto Câmera](https://fwestarb.github.io/projeto-camera/).

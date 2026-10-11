@@ -1,0 +1,19 @@
+{
+  "url": "http://127.0.0.1:8809/",
+  "fontFaces": [
+    [
+      {
+        "family": "Oi",
+        "status": "loaded"
+      }
+    ],
+    [
+      {
+        "family": "STIX Two Text",
+        "status": "loaded"
+      }
+    ]
+  ],
+  "shaderPixelsChangeOnPointer": true,
+  "threeGalleryImagesLoaded": true
+}

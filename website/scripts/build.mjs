@@ -1,0 +1,12 @@
+import { build } from 'vite';
+import { readFile, writeFile } from 'node:fs/promises';
+import { resolve, dirname } from 'node:path';
+import { fileURLToPath } from 'node:url';
+const root = resolve(dirname(fileURLToPath(import.meta.url)), '..');
+const docs = resolve(root, '../docs');
+const outDir = resolve(docs, 'ui');
+if (dirname(outDir) !== docs) throw new Error('Invalid website output directory');
+await build({ root, build: { outDir, emptyOutDir: true, sourcemap: false } });
+const html = (await readFile(resolve(outDir, 'index.html'), 'utf8')).replaceAll('./assets/', './ui/assets/');
+await writeFile(resolve(docs, 'index.html'), html);
+console.log('GitHub Pages entry updated in docs/index.html');

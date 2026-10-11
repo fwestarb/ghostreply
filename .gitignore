@@ -20,3 +20,7 @@ Thumbs.db
 .vscode/
 .idea/
 *.log
+
+# Website dependencies and private previews
+node_modules/
+private-backups/
