@@ -13,7 +13,7 @@ const errorHandler = (err, req, res, next) => {
   const statusCode = isApiError ? err.statusCode : 500;
 
   if (!isApiError) {
-    logger.error(err.message, { stack: err.stack, path: req.originalUrl });
+    logger.error(err.message, { stack: err.stack, path: req.path });
   }
 
   res.status(statusCode).json({

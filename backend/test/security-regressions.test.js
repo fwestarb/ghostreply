@@ -136,3 +136,12 @@ test('access log omite query do link de recuperação', () => {
   const morgan = require('morgan');
   assert.equal(morgan.url({ path: '/reset-password', originalUrl: '/reset-password?token=canary' }), '/reset-password');
 });
+
+test('log de erro também omite credenciais da query', () => {
+  const logs = [];
+  const middleware = load('middlewares/error.middleware.js', { '../utils/logger': { error: (...args) => logs.push(args) } });
+  middleware.errorHandler(new Error('Synthetic failure'), { path: '/reset-password', originalUrl: '/reset-password?token=canary' },
+    { status(code) { assert.equal(code, 500); return this; }, json() {} }, () => {});
+  assert.equal(JSON.stringify(logs).includes('canary'), false);
+  assert.equal(logs[0][1].path, '/reset-password');
+});
