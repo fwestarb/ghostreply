@@ -31,9 +31,12 @@ async function findUnusedByUserId(userId) {
   return data || [];
 }
 
-async function markUsed(id) {
-  const { error } = await supabase.from(TABLE).update({ used_at: new Date().toISOString() }).eq('id', id);
+async function markUsed(id, userId) {
+  const now = new Date().toISOString();
+  const { data, error } = await supabase.from(TABLE).update({ used_at: now })
+    .eq('id', id).eq('user_id', userId).is('used_at', null).gt('expires_at', now).select('id');
   handleSupabaseError(error, 'markUsed');
+  return data?.length === 1;
 }
 
 module.exports = { create, findUnusedByUserId, markUsed };

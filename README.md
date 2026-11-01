@@ -28,6 +28,16 @@ A configuração das tabelas está em [backend/src/database/setup.sql](backend/s
 
 O provedor gratuito tem limites e pode ficar indisponível. O backend bloqueia modelos pagos. As funções de IA enviam o texto necessário ao provedor externo; não envie dados sensíveis de clientes.
 
+### Correções da revisão Vibe Check
+
+O servidor escuta em `127.0.0.1` por padrão (`HOST` permite configuração explícita). Sem SMTP, a recuperação apresenta resposta genérica e registra somente a indisponibilidade do envio; nunca devolve ou registra o link/token. Configure SMTP para receber links reais. A página de redefinição usa JavaScript externo compatível com CSP.
+
+Novas senhas aceitam até **72 bytes UTF-8**, limite do bcrypt; acentos e emoji podem ocupar vários bytes. Valores maiores são rejeitados, inclusive no login. Contas antigas que usavam senhas acima desse limite precisam de recuperação com SMTP configurado. Hashes históricos já truncados não permitem reconstruir ou distinguir o sufixo original; não houve conversão silenciosa dos hashes.
+
+A rotação de refresh e o consumo de reset exigem uma atualização condicional única no banco, sem migração de schema. O cliente compartilha uma renovação por sessão e ignora retornos antigos após troca/encerramento da sessão. Sugestões ficam vinculadas à conversa, painel e geração; retornos antigos não podem inserir em outra conversa ou substituir a geração atual. Reabrir o painel preserva a nova instância.
+
+Execute `cd backend` e `npm test` para regressões locais. Os testes usam fixtures e DOM simulados; não substituem validação integrada com Supabase, SMTP e WhatsApp.
+
 ### Verificação feita
 Cadastro/login, persistência, isolamento de dados entre duas contas temporárias, refresh/logout, 12 testes automatizados e chamadas reais de IA passaram em teste local. Contas temporárias foram removidas. O autor confirmou o funcionamento da extensão no WhatsApp Web em teste manual local. SMTP, login Google e hospedagem pública exigem configuração adicional. O projeto não foi publicado na Chrome Web Store. A IA pode errar; as sugestões exigem revisão humana. Mudanças no WhatsApp Web podem exigir ajustes nos seletores.
 

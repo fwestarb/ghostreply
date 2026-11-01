@@ -2,7 +2,7 @@ const app = require('./src/app');
 const env = require('./src/config/env');
 const logger = require('./src/utils/logger');
 
-app.listen(env.port, () => {
+app.listen(env.port, env.host, () => {
   logger.info(`GhostReply backend rodando na porta ${env.port} (${env.nodeEnv}).`);
 
   const pendentes = Object.entries(env.isConfigured)

@@ -262,14 +262,17 @@ const renderErrorMessage = (element, message) => {
 };
 
 let painelAtual = null;
+let respostaRevision = 0;
 
 const fecharPainel = () => {
   if (!painelAtual) return;
-  painelAtual.classList.remove('visible');
+  const fechando = painelAtual;
+  respostaRevision++;
+  STATE.painelAberto = false;
+  fechando.classList.remove('visible');
   setTimeout(() => {
-    painelAtual?.remove();
-    painelAtual = null;
-    STATE.painelAberto = false;
+    fechando.remove();
+    if (painelAtual === fechando) painelAtual = null;
   }, 300);
 };
 
@@ -1724,14 +1727,13 @@ const criarPainel = async (anchorEl) => {
 
   ajustarPosicaoPainel();
 
+  painelAtual = panel;
+  STATE.painelAberto = true;
   renderCurrentPanelPage(panel, content);
 
   requestAnimationFrame(() => {
     requestAnimationFrame(() => panel.classList.add('visible'));
   });
-
-  painelAtual = panel;
-  STATE.painelAberto = true;
 
   return content;
 };
@@ -1779,7 +1781,7 @@ const marcarCardAtivo = (container) => {
  * selo de revisão e o motivo — e a resposta nunca é inserida
  * automaticamente no campo do WhatsApp (ver carregarRespostasNoPainel).
  */
-const criarCardResposta = (resposta, index, container) => {
+const criarCardResposta = (resposta, index, container, contextoValido = () => true) => {
   const texto = resposta.text;
   const precisaRevisao = resposta.confident !== true;
 
@@ -1818,6 +1820,7 @@ const criarCardResposta = (resposta, index, container) => {
 
     insertBtn.addEventListener('click', (e) => {
       e.stopPropagation();
+      if (!contextoValido()) return;
       inserirRespostaNoWhatsApp(texto);
       marcarCardAtivo(container);
     });
@@ -1867,6 +1870,21 @@ const criarCardResposta = (resposta, index, container) => {
 };
 
 const carregarRespostasNoPainel = async (container, textoEntrada = '') => {
+  const revision = ++respostaRevision;
+  const panel = painelAtual;
+  const composeOrigem = encontrarComposeBoxWhatsApp();
+  const mainOrigem = document.querySelector('#main');
+  const identidadeConversa = () => {
+    const titulo = document.querySelector('#main header [data-testid="conversation-info-header-chat-title"], #main header [title]');
+    const mensagem = document.querySelector('#main [data-id]');
+    return `${titulo?.getAttribute('title') || titulo?.textContent || ''}|${mensagem?.getAttribute('data-id')?.split('_').slice(0, 2).join('_') || ''}`;
+  };
+  const identidadeOrigem = identidadeConversa();
+  const contextoValido = () => revision === respostaRevision && panel === painelAtual &&
+    container.isConnected && (!panel || STATE.painelAberto) &&
+    document.querySelector('#main') === mainOrigem && encontrarComposeBoxWhatsApp() === composeOrigem &&
+    identidadeConversa() === identidadeOrigem;
+  const insercaoValida = () => contextoValido() && composeOrigem && identidadeOrigem !== '|';
   mostrarLoading(container);
 
   const contexto = textoEntrada.trim().length ? textoEntrada : capturarContexto();
@@ -1882,6 +1900,7 @@ const carregarRespostasNoPainel = async (container, textoEntrada = '') => {
   try {
     const entrada = { text: contexto, history: capturarHistoricoWhatsApp() };
     const { replies, hasKnowledge } = await generateReplies(entrada, STATE.modoAtual);
+    if (!contextoValido()) return;
 
     container.innerHTML = '';
     container.dataset.loaded = 'true';
@@ -1901,7 +1920,7 @@ const carregarRespostasNoPainel = async (container, textoEntrada = '') => {
     }
 
     replies.forEach((resposta, i) => {
-      container.appendChild(criarCardResposta(resposta, i, container));
+      container.appendChild(criarCardResposta(resposta, i, container, insercaoValida));
     });
 
     // Auto-inserção só acontece quando a resposta é confiável. Se a
@@ -1909,7 +1928,7 @@ const carregarRespostasNoPainel = async (container, textoEntrada = '') => {
     // inserir sozinho um texto incerto é como o atendente quase
     // manda uma informação errada sem perceber.
     const primeiraConfiavel = replies.find((resposta) => resposta.confident === true);
-    if (primeiraConfiavel) {
+    if (primeiraConfiavel && insercaoValida()) {
       const compose = encontrarComposeBoxWhatsApp();
       const textoAtual = compose?.innerText?.trim() || '';
       const podeAutoInserir = !textoAtual || textoAtual === STATE.ultimoTextoInserido;
@@ -1919,6 +1938,7 @@ const carregarRespostasNoPainel = async (container, textoEntrada = '') => {
       }
     }
   } catch (err) {
+    if (!contextoValido()) return;
     container.innerHTML = '';
     const msg = document.createElement('div');
     msg.className = 'ghostreply-loading';

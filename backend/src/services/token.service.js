@@ -48,8 +48,10 @@ const verifyRefreshToken = async (userId, token) => {
   throw ApiError.unauthorized('Sessão inválida. Faça login novamente.');
 };
 
-const rotateRefreshToken = async (userId, oldTokenRecordId, oldToken) => {
-  await refreshTokenRepository.revoke(oldTokenRecordId);
+const rotateRefreshToken = async (userId, oldTokenRecordId) => {
+  if (!await refreshTokenRepository.consume(oldTokenRecordId, userId)) {
+    throw ApiError.unauthorized('Sessão inválida. Faça login novamente.');
+  }
   return issueRefreshToken(userId);
 };
 
@@ -80,7 +82,9 @@ const consumePasswordResetToken = async (userId, token) => {
   for (const registro of registros) {
     // eslint-disable-next-line no-await-in-loop
     if (await compareToken(token, registro.token_hash)) {
-      await passwordResetRepository.markUsed(registro.id);
+      if (!await passwordResetRepository.markUsed(registro.id, userId)) {
+        throw ApiError.badRequest('Link de redefinição de senha inválido ou expirado.');
+      }
       return true;
     }
   }
