@@ -20,11 +20,10 @@ const getTransporter = () => {
 const sendPasswordResetEmail = async ({ to, name, resetUrl }) => {
   const mailer = getTransporter();
 
-  // SMTP ainda não configurado: não falha a requisição, só registra o
-  // link no log para uso em desenvolvimento (nunca fazer isso em produção).
+  // Nunca entregar ou registrar a credencial fora do canal de e-mail.
   if (!mailer) {
-    logger.warn('SMTP não configurado — e-mail de redefinição de senha não enviado.', { to, resetUrl });
-    return { sent: false, devResetUrl: resetUrl };
+    logger.warn('SMTP não configurado — e-mail de redefinição de senha não enviado.');
+    return { sent: false };
   }
 
   await mailer.sendMail({

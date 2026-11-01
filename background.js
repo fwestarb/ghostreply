@@ -121,75 +121,111 @@ const buildSession = (data, remember) => {
 // aqui — ele vive só no cookie httpOnly do backend, inacessível ao JS.
 // Guardamos apenas o access token (de vida curta) e o perfil público.
 const storageArea = (remember) => (remember ? chrome.storage.local : chrome.storage.session);
+let sessionRevision = 0;
+let sessionWrites = Promise.resolve();
+let refreshInFlight = null;
+// Set-Cookie é aplicado pelo navegador antes de o JS receber a resposta.
+// Serializar também a rede: descartar apenas JSON não protege o cookie.
+let authRequests = Promise.resolve();
+const withAuthRequest = (operation) => {
+  const result = authRequests.then(operation);
+  authRequests = result.catch(() => {});
+  return result;
+};
+const mutateSession = (write) => {
+  sessionRevision++;
+  const result = sessionWrites.then(write);
+  sessionWrites = result.catch(() => {});
+  return result;
+};
 
-const saveSession = async (session, remember) => {
+const saveSession = (session, remember) => mutateSession(async () => {
   await storageArea(!remember).remove(SESSION_KEY);
   await storageArea(remember).set({ [SESSION_KEY]: { ...session, remember } });
-};
+});
 
-const clearSession = async () => {
+const clearSession = () => mutateSession(async () => {
   await chrome.storage.local.remove(SESSION_KEY);
   await chrome.storage.session.remove(SESSION_KEY);
-};
+});
 
 const loadStoredSession = async () => {
+  await sessionWrites;
   const local = await chrome.storage.local.get(SESSION_KEY);
   if (local[SESSION_KEY]) return local[SESSION_KEY];
   const session = await chrome.storage.session.get(SESSION_KEY);
   return session[SESSION_KEY] || null;
 };
 
-async function refreshSession(current) {
-  const data = await apiFetch('/auth/refresh', { method: 'POST', body: { userId: current.user.id } });
-  const session = buildSession(data, current.remember);
-  await saveSession(session, current.remember);
-  return session;
+function refreshSession(current, revision) {
+  if (refreshInFlight?.revision === revision) return refreshInFlight.promise;
+  const flight = { revision };
+  flight.promise = withAuthRequest(async () => {
+    try {
+      if (sessionRevision !== revision) return loadStoredSession();
+      const data = await apiFetch('/auth/refresh', { method: 'POST', body: { userId: current.user.id }, retries: 0 });
+      if (sessionRevision !== revision) return loadStoredSession();
+      const session = buildSession(data, current.remember);
+      await saveSession(session, current.remember);
+      return session;
+    } catch {
+      if (sessionRevision === revision) await clearSession();
+      return loadStoredSession();
+    } finally {
+      if (refreshInFlight === flight) refreshInFlight = null;
+    }
+  });
+  refreshInFlight = flight;
+  return flight.promise;
 }
 
 async function getSession() {
+  const revision = sessionRevision;
   const current = await loadStoredSession();
+  if (revision !== sessionRevision) return getSession();
   if (!current) return null;
 
   if (current.expiresAt > Date.now() + REFRESH_MARGIN_MS) {
     return current;
   }
 
-  try {
-    return await refreshSession(current);
-  } catch {
-    await clearSession();
-    return null;
-  }
+  return refreshSession(current, revision);
 }
 
 async function signUp({ name, email, password }) {
-  // O formulário de cadastro já valida a confirmação de senha antes de
-  // chamar esta função; reenviamos o mesmo valor para satisfazer o
-  // validador do backend sem pedir o campo duas vezes aqui.
-  const data = await apiFetch('/auth/register', {
-    method: 'POST',
-    body: { name, email, password, confirmPassword: password },
-    retries: 0
+  return withAuthRequest(async () => {
+    // O formulário de cadastro já valida a confirmação de senha antes de
+    // chamar esta função; reenviamos o mesmo valor para satisfazer o
+    // validador do backend sem pedir o campo duas vezes aqui.
+    const data = await apiFetch('/auth/register', {
+      method: 'POST',
+      body: { name, email, password, confirmPassword: password },
+      retries: 0
+    });
+    const session = buildSession(data, true);
+    await saveSession(session, true);
+    return session;
   });
-  const session = buildSession(data, true);
-  await saveSession(session, true);
-  return session;
 }
 
 async function signIn({ email, password, remember = true }) {
-  const data = await apiFetch('/auth/login', { method: 'POST', body: { email, password } });
-  const session = buildSession(data, remember);
-  await saveSession(session, remember);
-  return session;
+  return withAuthRequest(async () => {
+    const data = await apiFetch('/auth/login', { method: 'POST', body: { email, password } });
+    const session = buildSession(data, remember);
+    await saveSession(session, remember);
+    return session;
+  });
 }
 
 async function signOut() {
-  const current = await loadStoredSession();
-  if (current?.user?.id) {
-    await apiFetch('/auth/logout', { method: 'POST', body: { userId: current.user.id } }).catch(() => {});
-  }
-  await clearSession();
-  return { ok: true };
+  return withAuthRequest(async () => {
+    const current = await loadStoredSession();
+    await clearSession();
+    if (current?.user?.id) {
+      await apiFetch('/auth/logout', { method: 'POST', body: { userId: current.user.id } }).catch(() => {});
+    }
+    return { ok: true };
+  });
 }
 
 async function recoverPassword({ email }) {
@@ -207,13 +243,14 @@ async function updatePassword({ currentPassword, newPassword }) {
 }
 
 async function updateProfile({ name }) {
+  const revision = sessionRevision;
   const current = await loadStoredSession();
   if (!current?.accessToken) throw new Error('Sessão inválida. Faça login novamente.');
 
   const data = await apiFetch('/users/me', { method: 'PATCH', body: { name }, accessToken: current.accessToken });
   if (!data?.user?.id) throw new Error('Resposta inesperada do servidor.');
 
-  await saveSession({ ...current, user: data.user }, current.remember);
+  if (sessionRevision === revision) await saveSession({ ...current, user: data.user }, current.remember);
   return data.user;
 }
 
@@ -251,10 +288,12 @@ async function signInWithGoogle() {
   const idToken = parsedParams.get('id_token');
   if (!idToken) throw new Error('Não foi possível concluir o login com Google.');
 
-  const data = await apiFetch('/auth/google', { method: 'POST', body: { idToken } });
-  const session = buildSession(data, true);
-  await saveSession(session, true);
-  return session;
+  return withAuthRequest(async () => {
+    const data = await apiFetch('/auth/google', { method: 'POST', body: { idToken } });
+    const session = buildSession(data, true);
+    await saveSession(session, true);
+    return session;
+  });
 }
 
 // ============================================================

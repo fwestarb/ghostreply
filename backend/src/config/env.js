@@ -20,6 +20,7 @@ if (missing.length) {
 const env = {
   nodeEnv: process.env.NODE_ENV || 'development',
   port: Number(process.env.PORT) || 4000,
+  host: process.env.HOST || '127.0.0.1',
   appBaseUrl: process.env.APP_BASE_URL || 'http://localhost:4000',
 
   supabaseUrl: process.env.SUPABASE_URL || '',

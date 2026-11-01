@@ -48,10 +48,9 @@ const logout = asyncHandler(async (req, res) => {
 });
 
 const forgotPassword = asyncHandler(async (req, res) => {
-  const result = await authService.forgotPassword(req.body);
+  await authService.forgotPassword(req.body);
   res.status(200).json({
-    message: 'Se este e-mail existir, um link de redefinição foi enviado.',
-    ...(process.env.NODE_ENV !== 'production' && result?.devResetUrl ? { devResetUrl: result.devResetUrl } : {})
+    message: 'Se este e-mail existir e o envio estiver disponível, você receberá um link de redefinição.'
   });
 });
 

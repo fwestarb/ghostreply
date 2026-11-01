@@ -28,6 +28,8 @@ app.use(express.json({ limit: '1mb' }));
 app.use(express.urlencoded({ extended: true }));
 app.use(cookieParser());
 
+// Links de recuperação levam credenciais na query; registrar somente o caminho.
+morgan.token('url', (req) => req.path);
 app.use(morgan('combined', { stream: logger.accessLogStream }));
 if (env.nodeEnv !== 'production') {
   app.use(morgan('dev'));

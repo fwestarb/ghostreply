@@ -1,4 +1,5 @@
 const { body } = require('express-validator');
+const { assertPasswordLength } = require('../utils/password');
 
 const nameField = body('name')
   .trim()
@@ -18,7 +19,9 @@ const passwordField = (field = 'password') =>
   body(field)
     .isString()
     .isLength({ min: 8 })
-    .withMessage('A senha deve ter pelo menos 8 caracteres.');
+    .withMessage('A senha deve ter pelo menos 8 caracteres.')
+    .bail()
+    .custom((value) => { assertPasswordLength(value); return true; });
 
 const registerValidators = [
   nameField,

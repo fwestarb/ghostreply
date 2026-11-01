@@ -39,6 +39,15 @@ async function revoke(id) {
   handleSupabaseError(error, 'revoke');
 }
 
+async function consume(id, userId) {
+  const now = new Date().toISOString();
+  const { data, error } = await supabase.from(TABLE)
+    .update({ revoked_at: now }).eq('id', id).eq('user_id', userId)
+    .is('revoked_at', null).gt('expires_at', now).select('id');
+  handleSupabaseError(error, 'consume');
+  return data?.length === 1;
+}
+
 async function revokeAllForUser(userId) {
   const { error } = await supabase
     .from(TABLE)
@@ -49,4 +58,4 @@ async function revokeAllForUser(userId) {
   handleSupabaseError(error, 'revokeAllForUser');
 }
 
-module.exports = { create, findActiveByUserId, revoke, revokeAllForUser };
+module.exports = { create, findActiveByUserId, revoke, consume, revokeAllForUser };

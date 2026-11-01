@@ -92,9 +92,8 @@ async function forgotPassword({ email }) {
 }
 
 async function resetPassword({ userId, token, newPassword }) {
-  await tokenService.consumePasswordResetToken(userId, token);
-
   const passwordHash = await hashPassword(newPassword);
+  await tokenService.consumePasswordResetToken(userId, token);
   await userRepository.updatePassword(userId, passwordHash);
 
   // Redefinir a senha invalida todas as sessões existentes — se alguém
