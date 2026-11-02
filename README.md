@@ -28,6 +28,12 @@ A configuração das tabelas está em [backend/src/database/setup.sql](backend/s
 
 O provedor gratuito tem limites e pode ficar indisponível. O backend bloqueia modelos pagos. As funções de IA enviam o texto necessário ao provedor externo; não envie dados sensíveis de clientes.
 
+### Quantidade de sugestões na API
+
+`POST /api/ai/replies` aceita `replyCount` como número inteiro JSON de 1 a 3. Exemplo: `{"text":"Qual é o horário?","tone":"profissional","replyCount":1}`. Ausente mantém o padrão de três. Valores inválidos são rejeitados; o retorno nunca excede o solicitado, mas pode conter menos opções se o provedor produzir menos. A revisão humana e a regra de base vazia permanecem. A extensão continua pedindo três e não ganhou um seletor visual.
+
+The replies API accepts an optional integer `replyCount` (1–3), defaulting to three. Responses contain at most the requested count; incomplete provider output is not duplicated. The current extension still requests three. Human review remains required.
+
 ### Correções da revisão Vibe Check
 
 O servidor escuta em `127.0.0.1` por padrão (`HOST` permite configuração explícita). Sem SMTP, a recuperação apresenta resposta genérica e registra somente a indisponibilidade do envio; nunca devolve ou registra o link/token. Configure SMTP para receber links reais. A página de redefinição usa JavaScript externo compatível com CSP.

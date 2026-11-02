@@ -2,8 +2,8 @@ const asyncHandler = require('../utils/asyncHandler');
 const aiService = require('../services/ai.service');
 
 const generateReplies = asyncHandler(async (req, res) => {
-  const { text, history, tone } = req.body;
-  const resultado = await aiService.generateReplies(req.user.id, { text, history, tone });
+  const { text, history, tone, replyCount } = req.body;
+  const resultado = await aiService.generateReplies(req.user.id, { text, history, tone, replyCount });
   res.status(200).json(resultado);
 });
 
