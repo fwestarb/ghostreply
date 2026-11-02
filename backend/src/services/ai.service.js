@@ -42,7 +42,7 @@ const REGRAS_ESTILO = [
   'Escreva como uma pessoa real da equipe de atendimento — nunca como um assistente de IA.',
   'Nunca comece com frases de assistente como "Entendo", "Claro, posso ajudar", "Como assistente" ou "Peço desculpas pelo transtorno".',
   'Mensagens curtas, no ritmo do WhatsApp: 1 a 3 frases por resposta.',
-  'As 3 opções devem ter aberturas e estruturas diferentes entre si — nunca repita a mesma primeira frase.',
+  'As opções devem ter aberturas e estruturas diferentes entre si — nunca repita a mesma primeira frase.',
   'Não repita literalmente a mensagem recebida, não use aspas, numeração, rótulos nem meta-comentários.',
   'Responda no mesmo idioma em que o cliente escreveu.'
 ];
@@ -53,7 +53,7 @@ const numerar = (regras) => regras.map((regra, i) => `${i + 1}. ${regra}`).join(
 // Montagem do prompt
 // ============================================================
 
-const montarSystemPrompt = ({ profile, knowledgeBlock, hasKnowledge }, tone) => {
+const montarSystemPrompt = ({ profile, knowledgeBlock, hasKnowledge }, tone, replyCount) => {
   const nomeEmpresa = profile.companyName || 'a empresa';
 
   const blocos = [
@@ -97,7 +97,7 @@ const montarSystemPrompt = ({ profile, knowledgeBlock, hasKnowledge }, tone) => 
   blocos.push(
     'FORMATO DA SAÍDA — responda APENAS com um JSON válido, sem texto antes ou depois, no formato:\n' +
       '{"replies":[{"text":"...","confident":true},{"text":"...","confident":false,"reviewReason":"motivo curto"}]}\n' +
-      'Sempre 3 objetos em "replies". O campo "reviewReason" (máx. 80 caracteres, em português) é obrigatório ' +
+      `Sempre ${replyCount} objeto(s) em "replies". O campo "reviewReason" (máx. 80 caracteres, em português) é obrigatório ` +
       'quando "confident" for false e explica ao atendente humano o que precisa ser verificado.'
   );
 
@@ -184,13 +184,16 @@ const parseReplies = (rawText) => {
 // Casos de uso
 // ============================================================
 
-async function generateReplies(userId, { text, history, tone }) {
+async function generateReplies(userId, { text, history, tone, replyCount = 3 }) {
+  if (!Number.isInteger(replyCount) || replyCount < 1 || replyCount > 3) {
+    throw ApiError.badRequest('Quantidade deve ser um inteiro entre 1 e 3.');
+  }
   if (!text || !text.trim()) {
     throw ApiError.badRequest('Digite uma mensagem para gerar respostas.');
   }
 
   const contexto = await knowledgeService.buildContext(userId);
-  const systemPrompt = montarSystemPrompt(contexto, tone);
+  const systemPrompt = montarSystemPrompt(contexto, tone, replyCount);
 
   const transcricao = formatarHistorico(history);
   const blocoHistorico = transcricao
@@ -203,7 +206,7 @@ async function generateReplies(userId, { text, history, tone }) {
       role: 'user',
       content:
         `${blocoHistorico}Última mensagem recebida do cliente:\n"${text.trim()}"\n\n` +
-        'Gere as 3 respostas no formato JSON especificado.'
+        `Gere ${replyCount} resposta(s) no formato JSON especificado.`
     }
   ];
 
@@ -215,7 +218,7 @@ async function generateReplies(userId, { text, history, tone }) {
     responseFormat: { type: 'json_object' }
   });
 
-  const replies = parseReplies(raw);
+  const replies = parseReplies(raw).slice(0, replyCount);
   if (!contexto.hasKnowledge) {
     replies.forEach((reply) => {
       reply.confident = false;

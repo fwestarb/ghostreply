@@ -15,3 +15,7 @@ The site is bilingual and includes source download, setup instructions and hones
 [Testes do site](TESTE-SITE.json): idiomas e persistência, layouts 320/390/768/1440 px sem overflow, galeria por teclado, rolagem vertical, clipboard, FAQ, WebGL, alternativa sem WebGL, movimento reduzido e download com SHA-256, falhas e cancelamento. Isso verifica o site; não é um novo teste físico da câmera ou de integração com serviços externos.
 
 Imagens e licenças: [THIRD-PARTY.md](THIRD-PARTY.md).
+
+## Atualização Cliente do Amanhã — 01/11/2026
+
+Download atualizado com `replyCount` opcional de 1 a 3 na API de sugestões, padrão três e validação antes das integrações. Sem seletor novo na extensão. Suite Node: 35 testes locais. O Pages distribui o código; o backend permanece local e deve ser reiniciado após atualizar. Não há hospedagem pública de API configurada neste repositório.
